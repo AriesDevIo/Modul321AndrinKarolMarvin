@@ -1,4 +1,3 @@
-# Modul321AndrinKarolMarvin
 # 🎟️ Distributed Event Ticketing System
 
 > TBZ · Modul 321 – Verteilte Systeme programmieren · LB2 Projektarbeit · AP23a
@@ -117,11 +116,11 @@ If 0 rows come back, the event is sold out and the service returns `409`. This s
 
 | Service | Responsibility | Owner | Database |
 |---|---|---|---|
-| **User Service** | Registration, login, JWT issuing, roles | Person A | `users_db` |
-| **Event Service** | Event catalog, ticket inventory, atomic reserve/release | Person B | `events_db` |
-| **Booking Service** | Booking flow (saga), booking history | Person C | `bookings_db` |
-| **Payment & Notification Service** | Mock payments, notifications | Person D | `payments_db` |
-| **Gateway** | Routing, load balancing, failover | Person D | – |
+| **User Service** | Registration, login, JWT issuing, roles | Andrin | `users_db` |
+| **Event Service** | Event catalog, ticket inventory, atomic reserve/release | Andrin | `events_db` |
+| **Booking Service** | Booking flow (saga), booking history | Karol | `bookings_db` |
+| **Payment & Notification Service** | Mock payments, notifications | Marvin | `payments_db` |
+| **Gateway** | Routing, load balancing, failover | Marvin | – |
 
 Each service runs on port `3000` internally and exposes `GET /health`.
 
@@ -254,16 +253,16 @@ Status values: `PENDING` · `CONFIRMED` · `FAILED` · `CANCELLED`
 
 ## High Availability
 
-| # | Measure | Effect |
-|---|---|---|
-| 1 | **2 replicas per service** behind nginx (`max_fails`, `fail_timeout`) | One instance can fail without an outage |
-| 2 | **Healthchecks + `restart: always`** | Crashed containers restart automatically |
-| 3 | **Stateless services (JWT)** | Any replica can handle any request |
-| 4 | **Atomic reservation** | Consistent even under parallel access |
-| 5 | **Compensation (release)** | No tickets stay blocked after failures |
-| 6 | **Graceful degradation** | A notification outage doesn't block bookings |
-| 7 | **Safe retries** | nginx only retries a POST if the connection failed before sending, so there are no double bookings |
-| 8 | *Optional:* PostgreSQL replica, cleanup job for stuck `PENDING` bookings | Removes the DB single point of failure and handles crashed sagas |
+| # | Measure | Effect | Owner |
+|---|---|---|---|
+| 1 | **2 replicas per service** behind nginx (`max_fails`, `fail_timeout`) | One instance can fail without an outage | Marvin |
+| 2 | **Healthchecks + `restart: always`** | Crashed containers restart automatically | Marvin |
+| 3 | **Stateless services (JWT)** | Any replica can handle any request | Andrin |
+| 4 | **Atomic reservation** | Consistent even under parallel access | Andrin |
+| 5 | **Compensation (release)** | No tickets stay blocked after failures | Karol |
+| 6 | **Graceful degradation** | A notification outage doesn't block bookings | Karol |
+| 7 | **Safe retries** | nginx only retries a POST if the connection failed before sending, so there are no double bookings | Marvin |
+| 8 | *Optional:* PostgreSQL replica, cleanup job for stuck `PENDING` bookings | Removes the DB single point of failure and handles crashed sagas | Karol |
 
 **Live demo:**
 
@@ -386,12 +385,11 @@ ticketing-distributed/
 
 ## Team
 
-| Name | Component | Additional responsibility |
-|---|---|---|
-| Person A | User Service | Web frontend *(optional)* |
-| Person B | Event Service | PostgreSQL setup (+ replica) |
-| Person C | Booking Service | – |
-| Person D | Payment & Notification Service | nginx gateway, Docker Compose |
+| Name | Components | Additional responsibility | Documentation chapters |
+|---|---|---|---|
+| **Andrin** | User Service, Event Service | – | Requirements; component chapters User + Event Service |
+| **Karol** | Booking Service | PostgreSQL setup (+ optional replica), merging & formatting the documentation | Procedure / project planning, conclusion; component chapter Booking Service |
+| **Marvin** | Payment & Notification Service | nginx gateway, Docker Compose, web frontend *(optional)* | System overview (architecture + HA concept); component chapter Payment & Notification Service |
 
 ---
 
