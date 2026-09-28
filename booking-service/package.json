@@ -1,0 +1,19 @@
+{
+  "name": "booking-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Booking Service: booking saga and booking history",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.1"
+  }
+}
