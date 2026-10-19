@@ -1,0 +1,175 @@
+name: ticketing
+
+x-service-environment: &service-environment
+  JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+  SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN in .env}
+  DB_HOST: postgres
+  DB_PORT: 5432
+  DB_USER: postgres
+  DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+  GATEWAY_URL: http://gateway/api
+  UPSTREAM_TIMEOUT_MS: 5000
+
+x-service-healthcheck: &service-healthcheck
+  test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+  interval: 10s
+  timeout: 3s
+  retries: 3
+  start_period: 10s
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  user-service-1:
+    build: ./user-service
+    container_name: user-service-1
+    restart: always
+    environment:
+      <<: *service-environment
+      DB_NAME: users_db
+    expose: ["3000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck: *service-healthcheck
+
+  user-service-2:
+    build: ./user-service
+    container_name: user-service-2
+    restart: always
+    environment:
+      <<: *service-environment
+      DB_NAME: users_db
+    expose: ["3000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck: *service-healthcheck
+
+  event-service-1:
+    build: ./event-service
+    container_name: event-service-1
+    restart: always
+    environment:
+      <<: *service-environment
+      DB_NAME: events_db
+    expose: ["3000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck: *service-healthcheck
+
+  event-service-2:
+    build: ./event-service
+    container_name: event-service-2
+    restart: always
+    environment:
+      <<: *service-environment
+      DB_NAME: events_db
+    expose: ["3000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck: *service-healthcheck
+
+  booking-service-1:
+    build: ./booking-service
+    container_name: booking-service-1
+    restart: always
+    environment:
+      <<: *service-environment
+      DB_NAME: bookings_db
+    expose: ["3000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck: *service-healthcheck
+
+  booking-service-2:
+    build: ./booking-service
+    container_name: booking-service-2
+    restart: always
+    environment:
+      <<: *service-environment
+      DB_NAME: bookings_db
+    expose: ["3000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck: *service-healthcheck
+
+  payment-service-1:
+    build: ./payment-service
+    container_name: payment-service-1
+    restart: always
+    environment:
+      <<: *service-environment
+      DB_NAME: payments_db
+    expose: ["3000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck: *service-healthcheck
+
+  payment-service-2:
+    build: ./payment-service
+    container_name: payment-service-2
+    restart: always
+    environment:
+      <<: *service-environment
+      DB_NAME: payments_db
+    expose: ["3000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck: *service-healthcheck
+
+  gateway:
+    image: nginx:1.30-alpine
+    restart: always
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./gateway/proxy_params:/etc/nginx/proxy_params:ro
+    depends_on:
+      user-service-1:
+        condition: service_started
+      user-service-2:
+        condition: service_started
+      event-service-1:
+        condition: service_started
+      event-service-2:
+        condition: service_started
+      booking-service-1:
+        condition: service_started
+      booking-service-2:
+        condition: service_started
+      payment-service-1:
+        condition: service_started
+      payment-service-2:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  postgres_data:
