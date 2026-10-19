@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ticketing</title>
+<style>
+  body { font-family: sans-serif; max-width: 900px; margin: 1em auto; padding: 0 1em; }
+  section { border: 1px solid #ccc; padding: .5em 1em 1em; margin-bottom: 1em; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { border: 1px solid #ddd; padding: 4px 6px; text-align: left; }
+  input, select, button { margin: 2px; }
+  #msg { white-space: pre-wrap; background: #f4f4f4; padding: .5em; min-height: 1.2em; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<h1>Ticketing</h1>
+<pre id="msg"></pre>
+
+<section id="auth">
+  <h2>Login / Register</h2>
+  <input id="username" placeholder="username">
+  <input id="password" type="password" placeholder="password">
+  <select id="role"><option>customer</option><option>organizer</option></select>
+  <button onclick="login()">Login</button>
+  <button onclick="register()">Register</button>
+</section>
+
+<section id="me" class="hidden">
+  Logged in as <b id="meName"></b> (<span id="meRole"></span>)
+  <button onclick="logout()">Logout</button>
+</section>
+
+<section>
+  <h2>Events <button onclick="loadEvents()">Refresh</button></h2>
+  <table>
+    <thead><tr><th>ID</th><th>Title</th><th>Venue</th><th>Date</th><th>Price</th><th>Available</th><th></th></tr></thead>
+    <tbody id="events"></tbody>
+  </table>
+</section>
+
+<section id="organizer" class="hidden">
+  <h2>Create event</h2>
+  <input id="evTitle" placeholder="title">
+  <input id="evDesc" placeholder="description">
+  <input id="evVenue" placeholder="venue">
+  <input id="evDate" type="datetime-local">
+  <input id="evPrice" type="number" step="0.05" placeholder="price">
+  <input id="evCap" type="number" placeholder="capacity">
+  <button onclick="createEvent()">Create</button>
+</section>
+
+<section id="customer" class="hidden">
+  <h2>My bookings <button onclick="loadBookings()">Refresh</button></h2>
+  <table>
+    <thead><tr><th>ID</th><th>Event</th><th>Qty</th><th>Total</th><th>Status</th><th>Created</th><th></th></tr></thead>
+    <tbody id="bookings"></tbody>
+  </table>
+  <h2>Notifications <button onclick="loadNotifications()">Refresh</button></h2>
+  <ul id="notifications"></ul>
+</section>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let token = localStorage.getItem('token');
+let user = null;
+
+function show(data) {
+  $('msg').textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+}
+
+async function api(method, path, body) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch('/api' + path, { method, headers, body: body && JSON.stringify(body) });
+  const text = await res.text();
+  let data;
+  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+  if (!res.ok) throw { status: res.status, data };
+  return data;
+}
+
+function fail(err) {
+  show(err.status ? `Error ${err.status}\n${JSON.stringify(err.data, null, 2)}` : String(err));
+}
+
+function creds() {
+  return { username: $('username').value, password: $('password').value };
+}
+
+async function register() {
+  try {
+    show(await api('POST', '/users/register', { ...creds(), role: $('role').value }));
+  } catch (e) { fail(e); }
+}
+
+async function login() {
+  try {
+    const { token: t } = await api('POST', '/users/login', creds());
+    token = t;
+    localStorage.setItem('token', t);
+    await loadMe();
+    show('Logged in');
+  } catch (e) { fail(e); }
+}
+
+function logout() {
+  token = null;
+  user = null;
+  localStorage.removeItem('token');
+  render();
+  show('Logged out');
+}
+
+async function loadMe() {
+  try {
+    user = token ? await api('GET', '/users/me') : null;
+  } catch {
+    token = null;
+    user = null;
+    localStorage.removeItem('token');
+  }
+  render();
+}
+
+function render() {
+  $('auth').classList.toggle('hidden', !!user);
+  $('me').classList.toggle('hidden', !user);
+  $('organizer').classList.toggle('hidden', user?.role !== 'organizer');
+  $('customer').classList.toggle('hidden', user?.role !== 'customer');
+  if (user) {
+    $('meName').textContent = user.username;
+    $('meRole').textContent = user.role;
+  }
+  loadEvents();
+  if (user?.role === 'customer') { loadBookings(); loadNotifications(); }
+}
+
+async function loadEvents() {
+  try {
+    const events = await api('GET', '/events');
+    $('events').innerHTML = '';
+    for (const ev of events) {
+      const tr = document.createElement('tr');
+      for (const v of [ev.id, ev.title, ev.venue, new Date(ev.date).toLocaleString(), ev.price,
+                       `${ev.available} / ${ev.capacity}`]) {
+        const td = document.createElement('td');
+        td.textContent = v;
+        tr.appendChild(td);
+      }
+      const actions = document.createElement('td');
+      if (user?.role === 'customer') {
+        actions.innerHTML = `<input type="number" min="1" max="10" value="1" style="width:4em">
+          <select><option>tok_ok</option><option>tok_fail</option></select>
+          <button>Book</button>`;
+        actions.querySelector('button').onclick = () =>
+          book(ev.id, Number(actions.querySelector('input').value), actions.querySelector('select').value);
+      } else if (user?.role === 'organizer' && ev.organizerId === user.id) {
+        actions.innerHTML = '<button>Delete</button>';
+        actions.querySelector('button').onclick = () => deleteEvent(ev.id);
+      }
+      tr.appendChild(actions);
+      $('events').appendChild(tr);
+    }
+  } catch (e) { fail(e); }
+}
+
+async function createEvent() {
+  try {
+    const date = $('evDate').value ? new Date($('evDate').value).toISOString() : '';
+    show(await api('POST', '/events', {
+      title: $('evTitle').value,
+      description: $('evDesc').value,
+      venue: $('evVenue').value,
+      date,
+      price: Number($('evPrice').value),
+      capacity: Number($('evCap').value),
+    }));
+    loadEvents();
+  } catch (e) { fail(e); }
+}
+
+async function deleteEvent(id) {
+  try {
+    await api('DELETE', `/events/${id}`);
+    show(`Event ${id} deleted`);
+    loadEvents();
+  } catch (e) { fail(e); }
+}
+
+async function book(eventId, quantity, paymentToken) {
+  try {
+    show(await api('POST', '/bookings', { eventId, quantity, paymentToken }));
+  } catch (e) { fail(e); }
+  loadEvents();
+  loadBookings();
+  setTimeout(loadNotifications, 300);
+}
+
+async function loadBookings() {
+  try {
+    const bookings = await api('GET', '/bookings');
+    $('bookings').innerHTML = '';
+    for (const b of bookings) {
+      const tr = document.createElement('tr');
+      for (const v of [b.id, b.eventId, b.quantity, b.totalPrice, b.status,
+                       new Date(b.createdAt).toLocaleString()]) {
+        const td = document.createElement('td');
+        td.textContent = v;
+        tr.appendChild(td);
+      }
+      const actions = document.createElement('td');
+      if (b.status === 'CONFIRMED') {
+        actions.innerHTML = '<button>Cancel</button>';
+        actions.querySelector('button').onclick = () => cancelBooking(b.id);
+      }
+      tr.appendChild(actions);
+      $('bookings').appendChild(tr);
+    }
+  } catch (e) { fail(e); }
+}
+
+async function cancelBooking(id) {
+  try {
+    show(await api('POST', `/bookings/${id}/cancel`));
+  } catch (e) { fail(e); }
+  loadEvents();
+  loadBookings();
+}
+
+async function loadNotifications() {
+  try {
+    const list = await api('GET', '/notifications');
+    $('notifications').innerHTML = '';
+    for (const n of list) {
+      const li = document.createElement('li');
+      li.textContent = `${new Date(n.createdAt).toLocaleString()}: ${n.message}`;
+      $('notifications').appendChild(li);
+    }
+  } catch (e) { fail(e); }
+}
+
+loadMe();
+</script>
+</body>
+</html>
