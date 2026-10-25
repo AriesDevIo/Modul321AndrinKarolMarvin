@@ -23,17 +23,17 @@
   <input id="username" placeholder="username">
   <input id="password" type="password" placeholder="password">
   <select id="role"><option>customer</option><option>organizer</option></select>
-  <button onclick="login()">Login</button>
-  <button onclick="register()">Register</button>
+  <button data-action="login">Login</button>
+  <button data-action="register">Register</button>
 </section>
 
 <section id="me" class="hidden">
   Logged in as <b id="meName"></b> (<span id="meRole"></span>)
-  <button onclick="logout()">Logout</button>
+  <button data-action="logout">Logout</button>
 </section>
 
 <section>
-  <h2>Events <button onclick="loadEvents()">Refresh</button></h2>
+  <h2>Events <button data-action="loadEvents">Refresh</button></h2>
   <table>
     <thead><tr><th>ID</th><th>Title</th><th>Venue</th><th>Date</th><th>Price</th><th>Available</th><th></th></tr></thead>
     <tbody id="events"></tbody>
@@ -48,16 +48,16 @@
   <input id="evDate" type="datetime-local">
   <input id="evPrice" type="number" step="0.05" placeholder="price">
   <input id="evCap" type="number" placeholder="capacity">
-  <button onclick="createEvent()">Create</button>
+  <button data-action="createEvent">Create</button>
 </section>
 
 <section id="customer" class="hidden">
-  <h2>My bookings <button onclick="loadBookings()">Refresh</button></h2>
+  <h2>My bookings <button data-action="loadBookings">Refresh</button></h2>
   <table>
     <thead><tr><th>ID</th><th>Event</th><th>Qty</th><th>Total</th><th>Status</th><th>Created</th><th></th></tr></thead>
     <tbody id="bookings"></tbody>
   </table>
-  <h2>Notifications <button onclick="loadNotifications()">Refresh</button></h2>
+  <h2>Notifications <button data-action="loadNotifications">Refresh</button></h2>
   <ul id="notifications"></ul>
 </section>
 
@@ -239,6 +239,13 @@ async function loadNotifications() {
       $('notifications').appendChild(li);
     }
   } catch (e) { fail(e); }
+}
+
+// Wired up here instead of inline onclick: inline handlers resolve names against
+// `document` first, so onclick="createEvent()" would call document.createEvent().
+const actions = { login, register, logout, loadEvents, createEvent, loadBookings, loadNotifications };
+for (const btn of document.querySelectorAll('[data-action]')) {
+  btn.addEventListener('click', () => actions[btn.dataset.action]());
 }
 
 loadMe();
