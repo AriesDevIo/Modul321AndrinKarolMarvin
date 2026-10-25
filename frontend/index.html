@@ -3,77 +3,572 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ticketing</title>
+<title>Gate 321 · Tickets for live events</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎟️</text></svg>">
 <style>
-  body { font-family: sans-serif; max-width: 900px; margin: 1em auto; padding: 0 1em; }
-  section { border: 1px solid #ccc; padding: .5em 1em 1em; margin-bottom: 1em; }
-  table { border-collapse: collapse; width: 100%; }
-  td, th { border: 1px solid #ddd; padding: 4px 6px; text-align: left; }
-  input, select, button { margin: 2px; }
-  #msg { white-space: pre-wrap; background: #f4f4f4; padding: .5em; min-height: 1.2em; }
-  .hidden { display: none; }
+  :root {
+    --bg: #f6f5f9;
+    --surface: #ffffff;
+    --surface-2: #f1eff6;
+    --border: #e4e1ec;
+    --text: #17141f;
+    --muted: #6d6880;
+    --brand: #e0245e;
+    --brand-hover: #c81d52;
+    --brand-soft: #fde8ef;
+    --ink: #120f1a;
+    --ok: #12915a;
+    --ok-soft: #e1f5ec;
+    --warn: #c46d00;
+    --warn-soft: #fff1dc;
+    --err: #d33a3a;
+    --err-soft: #fde9e9;
+    --shadow-sm: 0 1px 2px rgba(23, 20, 31, .06);
+    --shadow: 0 2px 6px rgba(23, 20, 31, .05), 0 10px 30px rgba(23, 20, 31, .08);
+    --radius: 16px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f0d15;
+      --surface: #1a1722;
+      --surface-2: #231f2e;
+      --border: #2f2a3c;
+      --text: #f1eff6;
+      --muted: #a29cb4;
+      --brand: #ff3d7a;
+      --brand-hover: #ff5a8e;
+      --brand-soft: #3b1626;
+      --ok: #3ccf8e;
+      --ok-soft: #12301f;
+      --warn: #f0a540;
+      --warn-soft: #3a2a12;
+      --err: #f26d6d;
+      --err-soft: #3d1c1f;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+      --shadow: 0 2px 6px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  main { flex: 1; }
+  a { color: inherit; text-decoration: none; }
+  .hidden { display: none !important; }
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+  .muted { color: var(--muted); }
+
+  /* ---------- Nav ---------- */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(18, 15, 26, .92);
+    backdrop-filter: blur(12px);
+    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+  }
+  .nav .container { display: flex; align-items: center; gap: 28px; height: 64px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; letter-spacing: -.02em; white-space: nowrap; }
+  .logo-mark {
+    width: 32px; height: 32px; border-radius: 9px;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, #ff3d7a, #8b3dff);
+    font-size: 16px;
+  }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-links a { padding: 8px 12px; border-radius: 8px; color: rgba(255, 255, 255, .75); font-weight: 600; font-size: 14px; }
+  .nav-links a:hover, .nav-links a.active { color: #fff; background: rgba(255, 255, 255, .08); }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .nav .btn-ghost { color: #fff; border-color: rgba(255, 255, 255, .2); }
+  .nav .btn-ghost:hover { background: rgba(255, 255, 255, .08); }
+  .icon-btn {
+    position: relative; width: 38px; height: 38px; border-radius: 10px;
+    display: grid; place-items: center;
+    background: transparent; border: 1px solid rgba(255, 255, 255, .15); color: #fff; padding: 0; font-size: 17px;
+  }
+  .icon-btn:hover { background: rgba(255, 255, 255, .08); }
+  .badge-dot {
+    position: absolute; top: -5px; right: -5px;
+    min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+    background: var(--brand); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
+  }
+  .user-pill { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: grid; place-items: center; text-transform: uppercase;
+    background: linear-gradient(135deg, #ff3d7a, #8b3dff); color: #fff; font-weight: 700;
+  }
+
+  .dropdown {
+    position: absolute; right: 0; top: 48px; width: 340px;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .dropdown h4 { margin: 0; padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .dropdown ul { list-style: none; margin: 0; padding: 6px; max-height: 360px; overflow: auto; }
+  .dropdown li { padding: 10px; border-radius: 10px; font-size: 14px; }
+  .dropdown li:hover { background: var(--surface-2); }
+  .dropdown time { display: block; font-size: 12px; color: var(--muted); }
+  .dropdown .empty-note { padding: 18px 16px; color: var(--muted); font-size: 14px; }
+
+  /* ---------- Buttons & inputs ---------- */
+  button {
+    font: inherit; font-weight: 700; cursor: pointer;
+    padding: 10px 18px; border-radius: 10px; border: 1px solid transparent;
+    transition: background .15s, transform .05s, opacity .15s, border-color .15s;
+  }
+  button:active { transform: translateY(1px); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--brand-hover); }
+  .btn-ghost { background: transparent; color: var(--text); border-color: var(--border); }
+  .btn-ghost:hover:not(:disabled) { background: var(--surface-2); }
+  .btn-danger { background: var(--err-soft); color: var(--err); }
+  .btn-danger:hover:not(:disabled) { background: var(--err); color: #fff; }
+  .btn-small { padding: 7px 12px; font-size: 13px; }
+  .btn-block { width: 100%; padding: 14px; font-size: 16px; }
+
+  label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  input, select, textarea {
+    width: 100%; padding: 11px 13px;
+    font: inherit; color: var(--text);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+  textarea { resize: vertical; min-height: 90px; }
+  .field { margin-bottom: 16px; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative; overflow: hidden;
+    background: radial-gradient(1200px 400px at 85% -10%, rgba(139, 61, 255, .55), transparent 60%),
+                radial-gradient(900px 400px at 10% 120%, rgba(255, 61, 122, .45), transparent 60%),
+                #120f1a;
+    color: #fff;
+    padding: 72px 0 96px;
+  }
+  .hero h1 { font-size: clamp(32px, 5vw, 56px); line-height: 1.05; letter-spacing: -.03em; margin: 0 0 14px; max-width: 720px; }
+  .hero p { font-size: 18px; color: rgba(255, 255, 255, .75); margin: 0 0 30px; max-width: 560px; }
+  .search {
+    display: flex; gap: 8px; max-width: 640px;
+    background: #fff; padding: 8px; border-radius: 14px; box-shadow: 0 10px 40px rgba(0, 0, 0, .35);
+  }
+  .search input { border: 0; background: transparent; color: #17141f; font-size: 16px; box-shadow: none !important; }
+  .search .btn-primary { padding: 12px 22px; white-space: nowrap; }
+  .hero-stats { display: flex; gap: 36px; margin-top: 34px; color: rgba(255, 255, 255, .7); font-size: 14px; }
+  .hero-stats b { display: block; color: #fff; font-size: 22px; }
+
+  /* ---------- Sections ---------- */
+  .section { padding: 44px 0 0; }
+  .section-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+  .section-head h2 { margin: 0; font-size: 26px; letter-spacing: -.02em; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+  .chip {
+    padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 600;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  }
+  .chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  @media (prefers-color-scheme: dark) { .chip.active { background: #fff; color: #120f1a; border-color: #fff; } }
+
+  /* ---------- Event cover art ---------- */
+  .cover {
+    position: relative; overflow: hidden;
+    display: grid; place-items: center;
+    color: #fff;
+  }
+  .cover::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, .25), transparent 40%),
+                radial-gradient(circle at 80% 90%, rgba(0, 0, 0, .35), transparent 50%);
+  }
+  .cover::after {
+    content: ""; position: absolute; inset: 0;
+    background: repeating-linear-gradient(115deg, rgba(255, 255, 255, .06) 0 2px, transparent 2px 18px);
+  }
+  .cover .emoji { position: relative; z-index: 1; filter: drop-shadow(0 6px 18px rgba(0, 0, 0, .35)); }
+
+  /* ---------- Featured ---------- */
+  .featured {
+    margin-top: -56px; position: relative; z-index: 2;
+    display: grid; grid-template-columns: 1.2fr 1fr;
+    background: var(--surface); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .featured .cover { min-height: 300px; }
+  .featured .cover .emoji { font-size: 110px; }
+  .featured-body { padding: 32px; display: flex; flex-direction: column; gap: 10px; }
+  .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--brand); }
+  .featured h3 { font-size: 30px; line-height: 1.15; margin: 0; letter-spacing: -.02em; }
+  .info-row { display: flex; gap: 8px; align-items: center; color: var(--muted); }
+  .featured .cta { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; }
+  .from { font-size: 13px; color: var(--muted); }
+  .from b { display: block; font-size: 24px; color: var(--text); }
+
+  /* ---------- Event grid ---------- */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+  .ecard {
+    display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; box-shadow: var(--shadow-sm);
+    transition: transform .18s, box-shadow .18s;
+  }
+  .ecard:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+  .ecard .cover { aspect-ratio: 16 / 9; }
+  .ecard .cover .emoji { font-size: 56px; }
+  .date-chip {
+    position: absolute; z-index: 2; top: 12px; left: 12px;
+    background: #fff; color: #17141f; border-radius: 10px; padding: 4px 10px; text-align: center; line-height: 1.1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .2);
+  }
+  .date-chip b { display: block; font-size: 18px; }
+  .date-chip span { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #e0245e; }
+  .stock-tag {
+    position: absolute; z-index: 2; top: 12px; right: 12px;
+    padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 800;
+    background: rgba(0, 0, 0, .55); color: #fff; backdrop-filter: blur(4px);
+  }
+  .stock-tag.low { background: #c46d00; }
+  .stock-tag.out { background: #d33a3a; }
+  .ecard-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .ecard h3 { margin: 0 0 4px; font-size: 17px; line-height: 1.3; }
+  .ecard .meta { font-size: 13px; color: var(--muted); }
+  .ecard-foot { margin-top: auto; padding-top: 12px; display: flex; align-items: center; justify-content: space-between; }
+  .ecard-foot .price { font-weight: 800; font-size: 16px; }
+  .ecard-foot .price small { font-weight: 600; color: var(--muted); font-size: 12px; }
+  .link-arrow { font-weight: 700; color: var(--brand); font-size: 14px; }
+
+  .empty {
+    text-align: center; color: var(--muted);
+    padding: 56px 20px; border: 2px dashed var(--border); border-radius: var(--radius);
+    grid-column: 1 / -1;
+  }
+  .empty .big { font-size: 42px; display: block; margin-bottom: 6px; }
+
+  /* ---------- Event detail ---------- */
+  .detail-hero { position: relative; color: #fff; }
+  .detail-hero .cover { height: 340px; }
+  .detail-hero .cover .emoji { font-size: 130px; }
+  .detail-hero .shade {
+    position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(180deg, transparent 30%, rgba(10, 8, 16, .85));
+  }
+  .detail-hero .container { position: absolute; z-index: 2; left: 0; right: 0; bottom: 28px; }
+  .detail-hero h1 { margin: 6px 0 8px; font-size: clamp(28px, 4vw, 44px); letter-spacing: -.02em; line-height: 1.1; }
+  .detail-hero .eyebrow { color: #ff8db1; }
+  .back { display: inline-flex; gap: 6px; align-items: center; font-weight: 700; color: rgba(255, 255, 255, .85); font-size: 14px; }
+  .detail { display: grid; grid-template-columns: 1fr 380px; gap: 32px; padding: 32px 0 0; align-items: start; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); }
+  .panel h2 { margin: 0 0 12px; font-size: 20px; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .fact { display: flex; gap: 12px; align-items: flex-start; }
+  .fact .ico { width: 40px; height: 40px; border-radius: 10px; background: var(--brand-soft); display: grid; place-items: center; font-size: 18px; flex: none; }
+  .fact b { display: block; font-size: 14px; }
+  .fact span { font-size: 13px; color: var(--muted); }
+  .desc { white-space: pre-wrap; color: var(--text); margin: 0; }
+
+  .ticket-box { position: sticky; top: 88px; }
+  .ticket-box .price-line { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+  .ticket-box .price-line b { font-size: 26px; }
+  .tier {
+    border: 2px solid var(--brand); background: var(--brand-soft); border-radius: 12px; padding: 14px;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px;
+  }
+  .tier .name { font-weight: 800; }
+  .tier .sub { font-size: 12px; color: var(--muted); }
+  .stepper { display: flex; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+  .stepper button { padding: 6px 12px; background: transparent; color: var(--text); font-size: 18px; line-height: 1; }
+  .stepper span { min-width: 28px; text-align: center; font-weight: 800; }
+  .pay-options { display: grid; gap: 8px; margin-bottom: 16px; }
+  .pay-option {
+    display: flex; align-items: center; gap: 10px; padding: 11px 12px;
+    border: 1px solid var(--border); border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; margin: 0;
+  }
+  .pay-option input { width: auto; margin: 0; accent-color: var(--brand); }
+  .pay-option:has(input:checked) { border-color: var(--brand); background: var(--brand-soft); }
+  .pay-option small { margin-left: auto; color: var(--muted); font-weight: 500; }
+  .summary { border-top: 1px dashed var(--border); padding-top: 14px; margin-bottom: 16px; font-size: 14px; }
+  .summary div { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .summary .total { font-size: 18px; font-weight: 800; margin-top: 8px; }
+  .avail-bar { height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin: 6px 0 4px; }
+  .avail-bar div { height: 100%; background: var(--ok); }
+  .avail-bar.low div { background: var(--warn); }
+  .avail-bar.out div { background: var(--err); }
+  .inline-error { background: var(--err-soft); color: var(--err); padding: 10px 12px; border-radius: 10px; font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+  .secure { text-align: center; font-size: 12px; color: var(--muted); margin-top: 12px; }
+
+  /* ---------- Confirmation ---------- */
+  .confirm { max-width: 640px; margin: 48px auto 0; text-align: center; }
+  .confirm .check {
+    width: 72px; height: 72px; margin: 0 auto 16px; border-radius: 50%;
+    background: var(--ok-soft); color: var(--ok); display: grid; place-items: center; font-size: 34px; font-weight: 800;
+  }
+  .confirm h1 { margin: 0 0 6px; font-size: 32px; letter-spacing: -.02em; }
+  .confirm .actions { display: flex; gap: 10px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+
+  /* ---------- Tickets ---------- */
+  .tickets { display: grid; gap: 18px; }
+  .ticket {
+    display: grid; grid-template-columns: 180px 1fr auto;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+    box-shadow: var(--shadow-sm); position: relative;
+  }
+  .ticket .cover .emoji { font-size: 54px; }
+  .ticket-main { padding: 20px 22px; }
+  .ticket-main h3 { margin: 4px 0 6px; font-size: 19px; }
+  .ticket-main .row { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 14px; color: var(--muted); }
+  .ticket-main .row b { color: var(--text); }
+  .ticket-stub {
+    position: relative; padding: 20px 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    border-left: 2px dashed var(--border); min-width: 170px;
+  }
+  .ticket-stub::before, .ticket-stub::after {
+    content: ""; position: absolute; left: -12px; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--bg); border: 1px solid var(--border);
+  }
+  .ticket-stub::before { top: -12px; }
+  .ticket-stub::after { bottom: -12px; }
+  .qr { width: 96px; height: 96px; background: #fff; padding: 6px; border-radius: 8px; }
+  .qr svg { width: 100%; height: 100%; display: block; }
+  .code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+  .pill.CONFIRMED { background: var(--ok-soft); color: var(--ok); }
+  .pill.PENDING { background: var(--warn-soft); color: var(--warn); }
+  .pill.FAILED { background: var(--err-soft); color: var(--err); }
+  .pill.CANCELLED { background: var(--surface-2); color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; }
+  th, td { padding: 12px 10px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: 0; }
+  .table-scroll { overflow-x: auto; }
+
+  /* ---------- Auth ---------- */
+  .auth { display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 64px); }
+  .auth-art {
+    background: radial-gradient(700px 400px at 80% 10%, rgba(139, 61, 255, .6), transparent 60%),
+                radial-gradient(700px 400px at 10% 100%, rgba(255, 61, 122, .5), transparent 60%), #120f1a;
+    color: #fff; padding: 56px; display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .auth-art h2 { font-size: 38px; line-height: 1.1; letter-spacing: -.02em; margin: 0 0 12px; }
+  .auth-art p { color: rgba(255, 255, 255, .75); margin: 0; font-size: 17px; }
+  .auth-art .big { font-size: 80px; margin-bottom: auto; }
+  .auth-form { display: grid; place-items: center; padding: 40px 24px; }
+  .auth-form form { width: 100%; max-width: 380px; }
+  .auth-form h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -.02em; }
+  .auth-form .sub { margin: 0 0 26px; color: var(--muted); }
+  .role-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .role-pick label {
+    margin: 0; padding: 14px; border: 1px solid var(--border); border-radius: 12px; cursor: pointer; font-weight: 600;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .role-pick label span { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .role-pick input { display: none; }
+  .role-pick label:has(input:checked) { border-color: var(--brand); background: var(--brand-soft); }
+  .switch { text-align: center; margin-top: 18px; font-size: 14px; color: var(--muted); }
+  .switch a { color: var(--brand); font-weight: 700; }
+
+  /* ---------- Dashboard ---------- */
+  .page-head { padding: 40px 0 8px; }
+  .page-head h1 { margin: 0; font-size: 32px; letter-spacing: -.02em; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin: 22px 0; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+  .stat span { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .stat b { display: block; font-size: 28px; letter-spacing: -.02em; }
+  .dash { display: grid; grid-template-columns: 1fr 1.3fr; gap: 22px; align-items: start; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  .form-grid .wide { grid-column: 1 / -1; }
+  .mini-cover { width: 44px; height: 44px; border-radius: 10px; flex: none; }
+  .mini-cover .emoji { font-size: 20px; }
+  .cell-event { display: flex; align-items: center; gap: 12px; }
+  .cell-event b { display: block; }
+  .cell-event span { font-size: 12px; color: var(--muted); }
+  .sold-bar { width: 90px; height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin-top: 4px; }
+  .sold-bar div { height: 100%; background: var(--brand); }
+
+  /* ---------- Footer ---------- */
+  footer { margin-top: 80px; background: #120f1a; color: rgba(255, 255, 255, .6); padding: 40px 0; font-size: 14px; }
+  footer .container { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  footer .logo { color: #fff; margin-bottom: 8px; }
+
+  /* ---------- Toast ---------- */
+  #msg {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px);
+    max-width: min(560px, calc(100% - 32px));
+    padding: 13px 18px; border-radius: 12px;
+    background: var(--ink); color: #fff; box-shadow: var(--shadow);
+    font-weight: 600; opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s; z-index: 100;
+  }
+  #msg.show { opacity: 1; transform: translate(-50%, 0); }
+  #msg.error { background: #d33a3a; }
+  #msg.success { background: #12915a; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px) {
+    .featured, .detail, .dash, .auth { grid-template-columns: 1fr; }
+    .ticket-box { position: static; }
+    .auth-art { display: none; }
+    .ticket { grid-template-columns: 1fr; }
+    .ticket .cover { height: 110px; }
+    .ticket-stub { border-left: 0; border-top: 2px dashed var(--border); flex-direction: row; justify-content: space-between; flex-wrap: wrap; }
+    .ticket-stub::before, .ticket-stub::after { display: none; }
+  }
+  @media (max-width: 640px) {
+    .container { padding: 0 16px; }
+    .nav .container { gap: 12px; }
+    .nav-links { display: none; }
+    .user-pill .uname { display: none; }
+    .hero { padding: 48px 0 84px; }
+    .hero-stats { gap: 22px; }
+    .search .btn-primary { padding: 12px 14px; }
+    .featured-body { padding: 22px; }
+    .featured .cover { min-height: 180px; }
+    .detail-hero .cover { height: 260px; }
+    .dropdown { position: fixed; left: 12px; right: 12px; top: 70px; width: auto; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+  /* Bottom tab bar on phones so My tickets / Dashboard stay reachable */
+  .tabbar { display: none; }
+  @media (max-width: 640px) {
+    .tabbar {
+      display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 60;
+      background: rgba(18, 15, 26, .96); border-top: 1px solid rgba(255, 255, 255, .08);
+      padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    }
+    .tabbar a { flex: 1; text-align: center; color: rgba(255, 255, 255, .65); font-size: 11px; font-weight: 700; padding: 4px; }
+    .tabbar a span { display: block; font-size: 20px; }
+    .tabbar a.active { color: #fff; }
+    footer { padding-bottom: 90px; }
+    #msg { bottom: 84px; }
+  }
 </style>
 </head>
 <body>
-<h1>Ticketing</h1>
-<pre id="msg"></pre>
 
-<section id="auth">
-  <h2>Login / Register</h2>
-  <input id="username" placeholder="username">
-  <input id="password" type="password" placeholder="password">
-  <select id="role"><option>customer</option><option>organizer</option></select>
-  <button onclick="login()">Login</button>
-  <button onclick="register()">Register</button>
-</section>
+<nav class="nav">
+  <div class="container">
+    <a class="logo" href="#/"><span class="logo-mark">🎟️</span>Gate 321</a>
+    <div class="nav-links" id="navLinks"></div>
+    <div class="nav-right" id="navRight"></div>
+  </div>
+</nav>
 
-<section id="me" class="hidden">
-  Logged in as <b id="meName"></b> (<span id="meRole"></span>)
-  <button onclick="logout()">Logout</button>
-</section>
+<main id="app"></main>
 
-<section>
-  <h2>Events <button onclick="loadEvents()">Refresh</button></h2>
-  <table>
-    <thead><tr><th>ID</th><th>Title</th><th>Venue</th><th>Date</th><th>Price</th><th>Available</th><th></th></tr></thead>
-    <tbody id="events"></tbody>
-  </table>
-</section>
+<footer>
+  <div class="container">
+    <div>
+      <div class="logo"><span class="logo-mark">🎟️</span>Gate 321</div>
+      Distributed ticketing · TBZ Modul 321 · AP23a
+    </div>
+    <div>Payments are simulated. Choose the declined card to test a failed payment.</div>
+  </div>
+</footer>
 
-<section id="organizer" class="hidden">
-  <h2>Create event</h2>
-  <input id="evTitle" placeholder="title">
-  <input id="evDesc" placeholder="description">
-  <input id="evVenue" placeholder="venue">
-  <input id="evDate" type="datetime-local">
-  <input id="evPrice" type="number" step="0.05" placeholder="price">
-  <input id="evCap" type="number" placeholder="capacity">
-  <button onclick="createEvent()">Create</button>
-</section>
-
-<section id="customer" class="hidden">
-  <h2>My bookings <button onclick="loadBookings()">Refresh</button></h2>
-  <table>
-    <thead><tr><th>ID</th><th>Event</th><th>Qty</th><th>Total</th><th>Status</th><th>Created</th><th></th></tr></thead>
-    <tbody id="bookings"></tbody>
-  </table>
-  <h2>Notifications <button onclick="loadNotifications()">Refresh</button></h2>
-  <ul id="notifications"></ul>
-</section>
+<div class="tabbar" id="tabbar"></div>
+<div id="msg" role="status" aria-live="polite"></div>
 
 <script>
 const $ = (id) => document.getElementById(id);
 let token = localStorage.getItem('token');
 let user = null;
+let events = [];
+let notifications = [];
+let toastTimer;
+const ui = { search: '', category: 'all', bellOpen: false };
 
-function show(data) {
-  $('msg').textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+// ---------- helpers ----------
+
+function el(tag, attrs = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === 'class') node.className = v;
+    else if (k.startsWith('on')) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of children.flat()) if (c != null && c !== false) node.append(c);
+  return node;
+}
+
+const money = (n) => `CHF ${Number(n).toFixed(2)}`;
+const fmtDay = (d) => new Date(d).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const fmtShort = (d) => new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+const fmtTime = (d) => new Date(d).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+function hash(str) {
+  let h = 2166136261;
+  for (const ch of String(str)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  return h >>> 0;
+}
+
+const CATEGORIES = [
+  { id: 'music', label: 'Concerts', emoji: '🎸', words: ['concert', 'music', 'live', 'band', 'festival', 'dj', 'tour', 'rock', 'jazz', 'party', 'open air'] },
+  { id: 'theatre', label: 'Theatre', emoji: '🎭', words: ['theatre', 'theater', 'musical', 'opera', 'ballet', 'show', 'play'] },
+  { id: 'sport', label: 'Sports', emoji: '⚽', words: ['match', 'game', 'football', 'hockey', 'cup', 'race', 'sport', 'final', 'tennis'] },
+  { id: 'comedy', label: 'Comedy', emoji: '🎤', words: ['comedy', 'stand-up', 'standup', 'comedian'] },
+];
+function categoryOf(ev) {
+  const text = `${ev.title} ${ev.description || ''}`.toLowerCase();
+  return CATEGORIES.find((c) => c.words.some((w) => text.includes(w))) || { id: 'other', label: 'Events', emoji: '🎟️' };
+}
+
+const PALETTES = [
+  ['#ff3d7a', '#8b3dff'], ['#ff8a00', '#e52e71'], ['#00c6ff', '#0072ff'], ['#11998e', '#38ef7d'],
+  ['#fc466b', '#3f5efb'], ['#f7971e', '#e94057'], ['#8e2de2', '#4a00e0'], ['#ee0979', '#ff6a00'],
+];
+function cover(ev, cls = '') {
+  const [a, b] = PALETTES[hash(ev.id + ev.title) % PALETTES.length];
+  return el('div', { class: `cover ${cls}`, style: `background: linear-gradient(135deg, ${a}, ${b})` },
+    el('span', { class: 'emoji' }, categoryOf(ev).emoji));
+}
+
+function stockInfo(ev) {
+  if (ev.available === 0) return { cls: 'out', text: 'Sold out' };
+  if (ev.available <= ev.capacity * 0.25) return { cls: 'low', text: `Only ${ev.available} left` };
+  return { cls: '', text: `${ev.available} available` };
+}
+
+// Decorative QR-style code (not scannable), derived from the booking id.
+function qr(seed) {
+  const n = 21, size = 4;
+  let h = hash(`booking-${seed}`);
+  const rects = [];
+  const finder = (x, y) => (x < 8 && y < 8) || (x >= n - 8 && y < 8) || (x < 8 && y >= n - 8);
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0;
+      if (!finder(x, y) && h % 2) rects.push(`<rect x="${x * size}" y="${y * size}" width="${size}" height="${size}"/>`);
+    }
+  }
+  const fp = (x, y) => `<rect x="${x * size + 2}" y="${y * size + 2}" width="24" height="24" fill="none" stroke="#120f1a" stroke-width="4"/>` +
+    `<rect x="${x * size + 8}" y="${y * size + 8}" width="12" height="12"/>`;
+  const wrap = el('div', { class: 'qr' });
+  wrap.innerHTML = `<svg viewBox="0 0 ${n * size} ${n * size}" fill="#120f1a">${rects.join('')}${fp(0, 0)}${fp(n - 7, 0)}${fp(0, n - 7)}</svg>`;
+  return wrap;
+}
+
+function show(text, type = '') {
+  const box = $('msg');
+  box.textContent = text;
+  box.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (box.className = type), 3800);
 }
 
 async function api(method, path, body) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch('/api' + path, { method, headers, body: body && JSON.stringify(body) });
+  const res = await fetch('/api' + path, { method, headers, body: body && JSON.stringify(body), cache: 'no-store' });
   const text = await res.text();
   let data;
   try { data = text ? JSON.parse(text) : null; } catch { data = text; }
@@ -81,167 +576,564 @@ async function api(method, path, body) {
   return data;
 }
 
-function fail(err) {
-  show(err.status ? `Error ${err.status}\n${JSON.stringify(err.data, null, 2)}` : String(err));
+const FRIENDLY = {
+  401: 'Please log in again.',
+  402: 'Your payment was declined. No tickets were booked.',
+  403: "You're not allowed to do that.",
+  409: 'Sorry, not enough tickets left.',
+  503: 'A service is unavailable right now. Please try again in a moment.',
+};
+function errorText(err) {
+  if (!err.status) return String(err.message || err);
+  const detail = err.data?.error;
+  const text = err.status === 400 && detail ? detail : FRIENDLY[err.status] || detail || 'Something went wrong.';
+  return `${text} (${err.status})`;
+}
+const fail = (err) => show(errorText(err), 'error');
+
+const go = (path) => { location.hash = '#' + path; };
+
+// ---------- data ----------
+
+async function loadEvents() {
+  events = await api('GET', '/events');
+  return events;
 }
 
-function creds() {
-  return { username: $('username').value, password: $('password').value };
-}
-
-async function register() {
+async function loadNotifications() {
+  if (user?.role !== 'customer') { notifications = []; return; }
   try {
-    show(await api('POST', '/users/register', { ...creds(), role: $('role').value }));
-  } catch (e) { fail(e); }
-}
-
-async function login() {
-  try {
-    const { token: t } = await api('POST', '/users/login', creds());
-    token = t;
-    localStorage.setItem('token', t);
-    await loadMe();
-    show('Logged in');
-  } catch (e) { fail(e); }
-}
-
-function logout() {
-  token = null;
-  user = null;
-  localStorage.removeItem('token');
-  render();
-  show('Logged out');
+    notifications = await api('GET', '/notifications');
+    notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  } catch { notifications = []; }
+  renderNav();
 }
 
 async function loadMe() {
   try {
     user = token ? await api('GET', '/users/me') : null;
   } catch {
-    token = null;
     user = null;
+    token = null;
     localStorage.removeItem('token');
   }
-  render();
 }
 
-function render() {
-  $('auth').classList.toggle('hidden', !!user);
-  $('me').classList.toggle('hidden', !user);
-  $('organizer').classList.toggle('hidden', user?.role !== 'organizer');
-  $('customer').classList.toggle('hidden', user?.role !== 'customer');
-  if (user) {
-    $('meName').textContent = user.username;
-    $('meRole').textContent = user.role;
+function seenKey() { return `seen-notifications-${user?.id}`; }
+function unseenCount() {
+  let seen = 0;
+  try { seen = Number(localStorage.getItem(seenKey()) || 0); } catch {}
+  return Math.max(0, notifications.length - seen);
+}
+
+// ---------- auth ----------
+
+async function login(username, password) {
+  const { token: t } = await api('POST', '/users/login', { username, password });
+  token = t;
+  localStorage.setItem('token', t);
+  await loadMe();
+  await loadNotifications();
+}
+
+function logout() {
+  token = null;
+  user = null;
+  notifications = [];
+  localStorage.removeItem('token');
+  show('You are logged out.');
+  if (location.hash === '#/' || location.hash === '') route();
+  else go('/');
+}
+
+// ---------- nav ----------
+
+function currentPage() {
+  return location.hash.slice(2).split(/[/?]/)[0] || '';
+}
+
+function renderNav() {
+  const page = currentPage();
+  const link = (href, text, key) => el('a', { href, class: page === key ? 'active' : '' }, text);
+  $('navLinks').replaceChildren(...[
+    link('#/', 'Events', ''),
+    user?.role === 'customer' ? link('#/tickets', 'My tickets', 'tickets') : null,
+    user?.role === 'organizer' ? link('#/dashboard', 'Dashboard', 'dashboard') : null,
+  ].filter(Boolean));
+
+  const tab = (href, icon, text, key) => el('a', { href, class: page === key ? 'active' : '' }, el('span', {}, icon), text);
+  $('tabbar').replaceChildren(...[
+    tab('#/', '🏠', 'Events', ''),
+    user?.role === 'customer' ? tab('#/tickets', '🎫', 'My tickets', 'tickets') : null,
+    user?.role === 'organizer' ? tab('#/dashboard', '📊', 'Dashboard', 'dashboard') : null,
+    !user ? tab('#/login', '👤', 'Log in', 'login') : null,
+  ].filter(Boolean));
+
+  const right = $('navRight');
+  if (!user) {
+    right.replaceChildren(
+      el('a', { href: '#/login' }, el('button', { class: 'btn-ghost btn-small' }, 'Log in')),
+      el('a', { href: '#/signup' }, el('button', { class: 'btn-primary btn-small' }, 'Sign up')),
+    );
+    return;
   }
-  loadEvents();
-  if (user?.role === 'customer') { loadBookings(); loadNotifications(); }
+
+  const items = [];
+  if (user.role === 'customer') {
+    const count = unseenCount();
+    items.push(el('div', { style: 'position:relative' },
+      el('button', { class: 'icon-btn', 'aria-label': 'Notifications', id: 'bellBtn', onclick: toggleBell },
+        '🔔', count ? el('span', { class: 'badge-dot' }, String(count)) : null),
+      ui.bellOpen ? el('div', { class: 'dropdown', id: 'bellMenu' },
+        el('h4', {}, 'Notifications'),
+        notifications.length
+          ? el('ul', {}, notifications.slice(0, 20).map((n) =>
+              el('li', {}, el('time', {}, `${fmtShort(n.createdAt)} · ${fmtTime(n.createdAt)}`), n.message)))
+          : el('div', { class: 'empty-note' }, 'No notifications yet. Book a ticket and you will see it here.')) : null));
+  }
+  items.push(
+    el('div', { class: 'user-pill' }, el('div', { class: 'avatar' }, user.username.slice(0, 1)), el('span', { class: 'uname' }, user.username)),
+    el('button', { class: 'btn-ghost btn-small', id: 'logoutBtn', onclick: logout }, 'Log out'),
+  );
+  right.replaceChildren(...items);
 }
 
-async function loadEvents() {
-  try {
-    const events = await api('GET', '/events');
-    $('events').innerHTML = '';
-    for (const ev of events) {
-      const tr = document.createElement('tr');
-      for (const v of [ev.id, ev.title, ev.venue, new Date(ev.date).toLocaleString(), ev.price,
-                       `${ev.available} / ${ev.capacity}`]) {
-        const td = document.createElement('td');
-        td.textContent = v;
-        tr.appendChild(td);
-      }
-      const actions = document.createElement('td');
-      if (user?.role === 'customer') {
-        actions.innerHTML = `<input type="number" min="1" max="10" value="1" style="width:4em">
-          <select><option>tok_ok</option><option>tok_fail</option></select>
-          <button>Book</button>`;
-        actions.querySelector('button').onclick = () =>
-          book(ev.id, Number(actions.querySelector('input').value), actions.querySelector('select').value);
-      } else if (user?.role === 'organizer' && ev.organizerId === user.id) {
-        actions.innerHTML = '<button>Delete</button>';
-        actions.querySelector('button').onclick = () => deleteEvent(ev.id);
-      }
-      tr.appendChild(actions);
-      $('events').appendChild(tr);
+function toggleBell(e) {
+  e.stopPropagation();
+  ui.bellOpen = !ui.bellOpen;
+  if (ui.bellOpen) {
+    try { localStorage.setItem(seenKey(), String(notifications.length)); } catch {}
+  }
+  renderNav();
+}
+document.addEventListener('click', (e) => {
+  if (ui.bellOpen && !e.target.closest('#bellMenu')) { ui.bellOpen = false; renderNav(); }
+});
+
+// ---------- home ----------
+
+function eventCard(ev) {
+  const d = new Date(ev.date);
+  const stock = stockInfo(ev);
+  const c = cover(ev);
+  c.append(
+    el('div', { class: 'date-chip' }, el('b', {}, String(d.getDate())), el('span', {}, d.toLocaleString('en', { month: 'short' }))),
+    el('div', { class: `stock-tag ${stock.cls}` }, stock.text));
+  return el('a', { class: 'ecard', href: `#/event/${ev.id}`, 'data-event-id': ev.id },
+    c,
+    el('div', { class: 'ecard-body' },
+      el('div', { class: 'eyebrow' }, categoryOf(ev).label),
+      el('h3', {}, ev.title),
+      el('div', { class: 'meta' }, `📍 ${ev.venue}`),
+      el('div', { class: 'meta' }, `🗓 ${fmtShort(ev.date)} · ${fmtTime(ev.date)}`),
+      el('div', { class: 'ecard-foot' },
+        el('div', { class: 'price' }, el('small', {}, 'from '), money(ev.price)),
+        el('span', { class: 'link-arrow' }, ev.available === 0 ? 'Sold out' : 'Get tickets →'))));
+}
+
+async function pageHome() {
+  await loadEvents();
+  const upcoming = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const featured = upcoming.find((e) => e.available > 0 && new Date(e.date) > new Date()) || upcoming[0];
+  const venues = new Set(events.map((e) => e.venue)).size;
+  const ticketsLeft = events.reduce((s, e) => s + e.available, 0);
+
+  const grid = el('div', { class: 'grid', id: 'events' });
+  const chips = el('div', { class: 'chips' });
+  const usedCats = [...new Map(events.map((e) => [categoryOf(e).id, categoryOf(e)])).values()];
+
+  const draw = () => {
+    const q = ui.search.trim().toLowerCase();
+    const list = upcoming.filter((e) =>
+      (ui.category === 'all' || categoryOf(e).id === ui.category) &&
+      (!q || `${e.title} ${e.venue} ${e.description}`.toLowerCase().includes(q)));
+    grid.replaceChildren(...list.map(eventCard));
+    if (!list.length) {
+      grid.append(el('div', { class: 'empty' }, el('span', { class: 'big' }, '🔍'),
+        events.length ? 'No events match your search.' : 'No events yet. Check back soon!'));
     }
-  } catch (e) { fail(e); }
+    chips.replaceChildren(...[{ id: 'all', label: 'All events', emoji: '✨' }, ...usedCats].map((c) =>
+      el('button', { class: `chip ${ui.category === c.id ? 'active' : ''}`, onclick: () => { ui.category = c.id; draw(); } }, `${c.emoji} ${c.label}`)));
+  };
+
+  const searchInput = el('input', { id: 'search', placeholder: 'Search by artist, event or venue', value: ui.search, 'aria-label': 'Search events',
+    oninput: (e) => { ui.search = e.target.value; draw(); } });
+
+  draw();
+  return [
+    el('section', { class: 'hero' },
+      el('div', { class: 'container' },
+        el('h1', {}, 'Your next unforgettable night starts here.'),
+        el('p', {}, 'Concerts, theatre, sports and more. Secure your seats in seconds, and every ticket is guaranteed: never oversold.'),
+        el('form', { class: 'search', onsubmit: (e) => { e.preventDefault(); $('all-events').scrollIntoView(); } },
+          searchInput, el('button', { class: 'btn-primary', type: 'submit' }, 'Find tickets')),
+        el('div', { class: 'hero-stats' },
+          el('div', {}, el('b', {}, String(events.length)), events.length === 1 ? 'event' : 'events'),
+          el('div', {}, el('b', {}, String(venues)), venues === 1 ? 'venue' : 'venues'),
+          el('div', {}, el('b', {}, String(ticketsLeft)), 'tickets available')))),
+    featured ? el('div', { class: 'container' },
+      el('a', { class: 'featured', href: `#/event/${featured.id}` },
+        cover(featured),
+        el('div', { class: 'featured-body' },
+          el('div', { class: 'eyebrow' }, '★ Featured'),
+          el('h3', {}, featured.title),
+          el('div', { class: 'info-row' }, '🗓', `${fmtDay(featured.date)} · ${fmtTime(featured.date)}`),
+          el('div', { class: 'info-row' }, '📍', featured.venue),
+          featured.description ? el('p', { class: 'muted', style: 'margin:6px 0 0' }, featured.description.slice(0, 160)) : null,
+          el('div', { class: 'cta' },
+            el('div', { class: 'from' }, 'Tickets from', el('b', {}, money(featured.price))),
+            el('button', { class: 'btn-primary', tabindex: '-1' }, 'Get tickets'))))) : null,
+    el('section', { class: 'section container', id: 'all-events' },
+      el('div', { class: 'section-head' }, el('h2', {}, 'All events')),
+      chips, grid),
+  ];
 }
 
-async function createEvent() {
-  try {
-    const date = $('evDate').value ? new Date($('evDate').value).toISOString() : '';
-    show(await api('POST', '/events', {
-      title: $('evTitle').value,
-      description: $('evDesc').value,
-      venue: $('evVenue').value,
-      date,
-      price: Number($('evPrice').value),
-      capacity: Number($('evCap').value),
-    }));
-    loadEvents();
-  } catch (e) { fail(e); }
-}
+// ---------- event detail ----------
 
-async function deleteEvent(id) {
+async function pageEvent(id) {
+  let ev;
   try {
-    await api('DELETE', `/events/${id}`);
-    show(`Event ${id} deleted`);
-    loadEvents();
-  } catch (e) { fail(e); }
-}
+    ev = await api('GET', `/events/${id}`);
+  } catch {
+    return [el('div', { class: 'container' }, el('div', { class: 'empty', style: 'margin-top:48px' },
+      el('span', { class: 'big' }, '🤷'), 'This event does not exist.', el('br'), el('br'),
+      el('a', { href: '#/' }, el('button', { class: 'btn-primary' }, 'Browse events'))))];
+  }
 
-async function book(eventId, quantity, paymentToken) {
-  try {
-    show(await api('POST', '/bookings', { eventId, quantity, paymentToken }));
-  } catch (e) { fail(e); }
-  loadEvents();
-  loadBookings();
-  setTimeout(loadNotifications, 300);
-}
+  const stock = stockInfo(ev);
+  const canBuy = user?.role === 'customer' && ev.available > 0;
+  const maxQty = Math.min(10, ev.available);
+  let qty = 1;
+  const qtyLabel = el('span', { id: 'qty' }, '1');
+  const qtyText = el('span', {}, '1 × ticket');
+  const subtotal = el('span', {}, money(ev.price));
+  const total = el('span', { id: 'total' }, money(ev.price));
+  const errBox = el('div', { class: 'inline-error hidden', id: 'buyError' });
+  const setQty = (n) => {
+    qty = Math.max(1, Math.min(maxQty, n));
+    qtyLabel.textContent = qty;
+    qtyText.textContent = `${qty} × ticket${qty > 1 ? 's' : ''}`;
+    subtotal.textContent = money(ev.price * qty);
+    total.textContent = money(ev.price * qty);
+  };
 
-async function loadBookings() {
-  try {
-    const bookings = await api('GET', '/bookings');
-    $('bookings').innerHTML = '';
-    for (const b of bookings) {
-      const tr = document.createElement('tr');
-      for (const v of [b.id, b.eventId, b.quantity, b.totalPrice, b.status,
-                       new Date(b.createdAt).toLocaleString()]) {
-        const td = document.createElement('td');
-        td.textContent = v;
-        tr.appendChild(td);
+  let action;
+  if (!user) {
+    action = el('a', { href: `#/login?next=/event/${ev.id}` }, el('button', { class: 'btn-primary btn-block', tabindex: '-1' }, 'Log in to buy tickets'));
+  } else if (user.role !== 'customer') {
+    action = el('button', { class: 'btn-primary btn-block', disabled: true }, 'Organizers can’t buy tickets');
+  } else if (ev.available === 0) {
+    action = el('button', { class: 'btn-primary btn-block', disabled: true }, 'Sold out');
+  } else {
+    const btn = el('button', { class: 'btn-primary btn-block', id: 'buyBtn', onclick: async () => {
+      btn.disabled = true;
+      btn.textContent = 'Processing payment…';
+      errBox.classList.add('hidden');
+      const paymentToken = document.querySelector('input[name=pay]:checked').value;
+      try {
+        const booking = await api('POST', '/bookings', { eventId: ev.id, quantity: qty, paymentToken });
+        renderInto(pageConfirmation(ev, booking));
+        setTimeout(loadNotifications, 400);
+      } catch (e) {
+        errBox.textContent = errorText(e);
+        errBox.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Buy tickets';
       }
-      const actions = document.createElement('td');
-      if (b.status === 'CONFIRMED') {
-        actions.innerHTML = '<button>Cancel</button>';
-        actions.querySelector('button').onclick = () => cancelBooking(b.id);
+    } }, 'Buy tickets');
+    action = btn;
+  }
+
+  const ratio = ev.capacity ? ev.available / ev.capacity : 0;
+  return [
+    el('div', { class: 'detail-hero' }, cover(ev), el('div', { class: 'shade' }),
+      el('div', { class: 'container' },
+        el('a', { class: 'back', href: '#/' }, '← All events'),
+        el('div', { class: 'eyebrow', style: 'margin-top:14px' }, categoryOf(ev).label),
+        el('h1', {}, ev.title),
+        el('div', {}, `${fmtDay(ev.date)} · ${ev.venue}`))),
+    el('div', { class: 'container detail' },
+      el('div', { class: 'panel' },
+        el('div', { class: 'facts' },
+          el('div', { class: 'fact' }, el('div', { class: 'ico' }, '🗓'), el('div', {}, el('b', {}, fmtDay(ev.date)), el('span', {}, `Starts ${fmtTime(ev.date)}`))),
+          el('div', { class: 'fact' }, el('div', { class: 'ico' }, '📍'), el('div', {}, el('b', {}, ev.venue), el('span', {}, 'Venue'))),
+          el('div', { class: 'fact' }, el('div', { class: 'ico' }, '🎫'), el('div', {}, el('b', {}, `${ev.capacity} tickets`), el('span', {}, `${ev.capacity - ev.available} sold`)))),
+        el('h2', {}, 'About this event'),
+        el('p', { class: 'desc' }, ev.description || 'More details coming soon.')),
+      el('aside', { class: 'panel ticket-box', id: 'ticketBox' },
+        el('div', { class: 'price-line' }, el('span', { class: 'muted' }, 'Tickets from'), el('b', {}, money(ev.price))),
+        el('div', { class: 'tier' },
+          el('div', {},
+            el('div', { class: 'name' }, 'General admission'),
+            el('div', { class: 'sub' }, `${money(ev.price)} · max ${Math.min(10, ev.capacity)} per order`)),
+          canBuy
+            ? el('div', { class: 'stepper' },
+                el('button', { 'aria-label': 'Fewer tickets', id: 'qtyMinus', onclick: () => setQty(qty - 1) }, '−'),
+                qtyLabel,
+                el('button', { 'aria-label': 'More tickets', id: 'qtyPlus', onclick: () => setQty(qty + 1) }, '+'))
+            : null),
+        el('div', { style: 'font-size:13px;font-weight:700', id: 'stockText' }, stock.text),
+        el('div', { class: `avail-bar ${stock.cls}` }, el('div', { style: `width:${ratio * 100}%` })),
+        el('div', { class: 'muted', style: 'font-size:12px;margin-bottom:16px' }, `${Math.round(ratio * 100)}% of tickets still available`),
+        canBuy ? [
+          el('label', {}, 'Payment method'),
+          el('div', { class: 'pay-options' },
+            el('label', { class: 'pay-option' }, el('input', { type: 'radio', name: 'pay', value: 'tok_ok', checked: true }), '💳 Visa •••• 4242', el('small', {}, 'test: works')),
+            el('label', { class: 'pay-option' }, el('input', { type: 'radio', name: 'pay', value: 'tok_fail' }), '💳 Mastercard •••• 0002', el('small', {}, 'test: declined'))),
+          el('div', { class: 'summary' },
+            el('div', {}, qtyText, subtotal),
+            el('div', { class: 'muted' }, el('span', {}, 'Service fee'), el('span', {}, money(0))),
+            el('div', { class: 'total' }, el('span', {}, 'Total'), total)),
+        ] : null,
+        errBox,
+        action,
+        el('div', { class: 'secure' }, '🔒 Simulated checkout. No real payment is made.'))),
+  ];
+}
+
+function pageConfirmation(ev, booking) {
+  return [el('div', { class: 'container', id: 'confirmation' },
+    el('div', { class: 'confirm' },
+      el('div', { class: 'check' }, '✓'),
+      el('h1', {}, 'You’re going!'),
+      el('p', { class: 'muted' }, `Order #${booking.id} is confirmed: ${booking.quantity} ticket${booking.quantity > 1 ? 's' : ''} for ${money(booking.totalPrice)}.`)),
+    el('div', { class: 'tickets', style: 'max-width:820px;margin:28px auto 0' }, ticketCard(booking, ev)),
+    el('div', { class: 'confirm', style: 'margin-top:0' },
+      el('div', { class: 'actions' },
+        el('a', { href: '#/tickets' }, el('button', { class: 'btn-primary', tabindex: '-1' }, 'View my tickets')),
+        el('a', { href: '#/' }, el('button', { class: 'btn-ghost', tabindex: '-1' }, 'Browse more events')))))];
+}
+
+// ---------- tickets ----------
+
+function ticketCard(b, ev) {
+  ev = ev || { id: b.eventId, title: `Event #${b.eventId}`, venue: '', date: b.createdAt, description: '' };
+  const code = `G321-${String(b.id).padStart(5, '0')}-${hash(b.id) % 9000 + 1000}`;
+  return el('div', { class: 'ticket', 'data-booking-id': b.id },
+    cover(ev),
+    el('div', { class: 'ticket-main' },
+      el('div', { class: 'eyebrow' }, 'General admission'),
+      el('h3', {}, ev.title),
+      el('div', { class: 'row' },
+        el('span', {}, '🗓 ', el('b', {}, `${fmtShort(ev.date)} · ${fmtTime(ev.date)}`)),
+        ev.venue ? el('span', {}, '📍 ', el('b', {}, ev.venue)) : null),
+      el('div', { class: 'row', style: 'margin-top:8px' },
+        el('span', {}, 'Tickets ', el('b', {}, String(b.quantity))),
+        el('span', {}, 'Paid ', el('b', {}, money(b.totalPrice))),
+        el('span', {}, 'Order ', el('b', {}, `#${b.id}`)))),
+    el('div', { class: 'ticket-stub' },
+      qr(b.id),
+      el('div', { class: 'code' }, code)));
+}
+
+async function pageTickets() {
+  if (user?.role !== 'customer') return go('/login?next=/tickets');
+  const [bookings] = await Promise.all([api('GET', '/bookings'), loadEvents(), loadNotifications()]);
+  const byId = Object.fromEntries(events.map((e) => [e.id, e]));
+  const active = bookings.filter((b) => b.status === 'CONFIRMED');
+  const others = bookings.filter((b) => b.status !== 'CONFIRMED');
+
+  const cancel = async (b, btn) => {
+    btn.disabled = true;
+    try {
+      await api('POST', `/bookings/${b.id}/cancel`);
+      show('Order cancelled. Your tickets were released.', 'success');
+    } catch (e) { fail(e); }
+    route();
+  };
+
+  return [el('div', { class: 'container' },
+    el('div', { class: 'page-head' }, el('h1', {}, 'My tickets'),
+      el('p', { class: 'muted', style: 'margin:4px 0 0' }, active.length ? `You have ${active.length} active order${active.length > 1 ? 's' : ''}.` : 'No active tickets yet.')),
+    el('div', { class: 'tickets', id: 'ticketList', style: 'margin-top:22px' },
+      active.length
+        ? active.map((b) => {
+            const t = ticketCard(b, byId[b.eventId]);
+            const btn = el('button', { class: 'btn-ghost btn-small cancel-btn', onclick: () => cancel(b, btn) }, 'Cancel order');
+            t.querySelector('.ticket-stub').append(btn);
+            return t;
+          })
+        : el('div', { class: 'empty' }, el('span', { class: 'big' }, '🎫'), 'Your tickets will show up here.', el('br'), el('br'),
+            el('a', { href: '#/' }, el('button', { class: 'btn-primary', tabindex: '-1' }, 'Find events')))),
+    others.length ? el('div', { class: 'section' },
+      el('div', { class: 'section-head' }, el('h2', { style: 'font-size:20px' }, 'Order history')),
+      el('div', { class: 'panel table-scroll', style: 'padding:8px 16px' },
+        el('table', {},
+          el('thead', {}, el('tr', {}, ['Order', 'Event', 'Tickets', 'Total', 'Date', 'Status'].map((h) => el('th', {}, h)))),
+          el('tbody', { id: 'history' }, others.map((b) => el('tr', { 'data-booking-id': b.id },
+            el('td', { class: 'muted' }, `#${b.id}`),
+            el('td', {}, byId[b.eventId]?.title ?? `Event #${b.eventId}`),
+            el('td', {}, String(b.quantity)),
+            el('td', {}, b.totalPrice == null ? '–' : money(b.totalPrice)),
+            el('td', { class: 'muted' }, fmtShort(b.createdAt)),
+            el('td', {}, el('span', { class: `pill ${b.status}` }, b.status.toLowerCase())))))))) : null)];
+}
+
+// ---------- auth pages ----------
+
+function pageAuth(mode, next) {
+  const isSignup = mode === 'signup';
+  const form = el('form', { id: 'authForm' },
+    el('h1', {}, isSignup ? 'Create your account' : 'Welcome back'),
+    el('p', { class: 'sub' }, isSignup ? 'It takes less than a minute.' : 'Log in to buy and manage your tickets.'),
+    el('div', { class: 'field' }, el('label', { for: 'username' }, 'Username'),
+      el('input', { id: 'username', autocomplete: 'username', required: true })),
+    el('div', { class: 'field' }, el('label', { for: 'password' }, 'Password'),
+      el('input', { id: 'password', type: 'password', autocomplete: isSignup ? 'new-password' : 'current-password', required: true })),
+    isSignup ? el('div', { class: 'field' }, el('label', {}, 'I want to'),
+      el('div', { class: 'role-pick' },
+        el('label', {}, el('input', { type: 'radio', name: 'role', value: 'customer', checked: true }), '🎫 Buy tickets', el('span', {}, 'Customer account')),
+        el('label', {}, el('input', { type: 'radio', name: 'role', value: 'organizer' }), '🎤 Host events', el('span', {}, 'Organizer account')))) : null,
+    el('button', { class: 'btn-primary btn-block', type: 'submit', id: 'authSubmit' }, isSignup ? 'Create account' : 'Log in'),
+    el('div', { class: 'switch' }, isSignup ? 'Already have an account? ' : 'New here? ',
+      el('a', { href: `#/${isSignup ? 'login' : 'signup'}${next ? `?next=${next}` : ''}` }, isSignup ? 'Log in' : 'Create an account')));
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('authSubmit');
+    btn.disabled = true;
+    const username = $('username').value.trim();
+    const password = $('password').value;
+    try {
+      if (isSignup) {
+        const role = form.querySelector('input[name=role]:checked').value;
+        await api('POST', '/users/register', { username, password, role });
       }
-      tr.appendChild(actions);
-      $('bookings').appendChild(tr);
+      await login(username, password);
+      show(isSignup ? `Welcome to Gate 321, ${user.username}!` : `Welcome back, ${user.username}!`, 'success');
+      go(next || (user.role === 'organizer' ? '/dashboard' : '/'));
+    } catch (err) {
+      show(err.status === 401 ? 'Wrong username or password.' : errorText(err), 'error');
+      btn.disabled = false;
     }
-  } catch (e) { fail(e); }
+  });
+
+  return [el('div', { class: 'auth' },
+    el('div', { class: 'auth-art' },
+      el('div', { class: 'big' }, isSignup ? '🎤' : '🎸'),
+      el('h2', {}, isSignup ? 'Join the crowd.' : 'The best seats are waiting.'),
+      el('p', {}, 'Book tickets for concerts, theatre and sports. Every ticket is guaranteed and never oversold.')),
+    el('div', { class: 'auth-form' }, form))];
 }
 
-async function cancelBooking(id) {
-  try {
-    show(await api('POST', `/bookings/${id}/cancel`));
-  } catch (e) { fail(e); }
-  loadEvents();
-  loadBookings();
-}
+// ---------- organizer dashboard ----------
 
-async function loadNotifications() {
-  try {
-    const list = await api('GET', '/notifications');
-    $('notifications').innerHTML = '';
-    for (const n of list) {
-      const li = document.createElement('li');
-      li.textContent = `${new Date(n.createdAt).toLocaleString()}: ${n.message}`;
-      $('notifications').appendChild(li);
+async function pageDashboard() {
+  if (user?.role !== 'organizer') return go('/login?next=/dashboard');
+  await loadEvents();
+  const mine = events.filter((e) => e.organizerId === user.id);
+  const sold = mine.reduce((s, e) => s + (e.capacity - e.available), 0);
+  const revenue = mine.reduce((s, e) => s + (e.capacity - e.available) * e.price, 0);
+
+  const field = (id, label, attrs = {}, wide = false) =>
+    el('div', { class: `field ${wide ? 'wide' : ''}` }, el('label', { for: id }, label), el('input', { id, ...attrs }));
+
+  const form = el('form', { class: 'panel', id: 'eventForm' },
+    el('h2', {}, 'Create a new event'),
+    el('div', { class: 'form-grid' },
+      field('evTitle', 'Event name', { placeholder: 'e.g. Summer Concert', required: true }, true),
+      el('div', { class: 'field wide' }, el('label', { for: 'evDesc' }, 'Description'),
+        el('textarea', { id: 'evDesc', placeholder: 'Tell people what to expect' })),
+      field('evVenue', 'Venue', { placeholder: 'Hallenstadion, Zürich', required: true }, true),
+      field('evDate', 'Date & time', { type: 'datetime-local', required: true }),
+      field('evPrice', 'Ticket price (CHF)', { type: 'number', min: '0', step: '0.05', placeholder: '49.90', required: true }),
+      field('evCap', 'Number of tickets', { type: 'number', min: '1', step: '1', placeholder: '100', required: true })),
+    el('button', { class: 'btn-primary btn-block', type: 'submit' }, 'Publish event'));
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const ev = await api('POST', '/events', {
+        title: $('evTitle').value,
+        description: $('evDesc').value,
+        venue: $('evVenue').value,
+        date: $('evDate').value ? new Date($('evDate').value).toISOString() : '',
+        price: Number($('evPrice').value),
+        capacity: Number($('evCap').value),
+      });
+      show(`“${ev.title}” is live with ${ev.capacity} tickets.`, 'success');
+      route();
+    } catch (err) { fail(err); }
+  });
+
+  const remove = async (ev, btn) => {
+    btn.disabled = true;
+    try {
+      await api('DELETE', `/events/${ev.id}`);
+      show('Event deleted.', 'success');
+      route();
+    } catch (err) {
+      btn.disabled = false;
+      show(err.status === 409 ? 'This event already has sold tickets and can’t be deleted. (409)' : errorText(err), 'error');
     }
-  } catch (e) { fail(e); }
+  };
+
+  return [el('div', { class: 'container' },
+    el('div', { class: 'page-head' }, el('h1', {}, 'Organizer dashboard'),
+      el('p', { class: 'muted', style: 'margin:4px 0 0' }, `Signed in as ${user.username}`)),
+    el('div', { class: 'stats' },
+      el('div', { class: 'stat' }, el('span', {}, 'Your events'), el('b', { id: 'statEvents' }, String(mine.length))),
+      el('div', { class: 'stat' }, el('span', {}, 'Tickets sold'), el('b', {}, String(sold))),
+      el('div', { class: 'stat' }, el('span', {}, 'Revenue'), el('b', {}, money(revenue)))),
+    el('div', { class: 'dash' },
+      form,
+      el('div', { class: 'panel table-scroll' },
+        el('h2', {}, 'Your events'),
+        mine.length
+          ? el('table', {},
+              el('thead', {}, el('tr', {}, ['Event', 'Sold', 'Revenue', ''].map((h) => el('th', {}, h)))),
+              el('tbody', { id: 'myEvents' }, mine.map((ev) => {
+                const s = ev.capacity - ev.available;
+                const btn = el('button', { class: 'btn-danger btn-small delete-btn', onclick: () => remove(ev, btn) }, 'Delete');
+                return el('tr', { 'data-event-id': ev.id },
+                  el('td', {}, el('a', { class: 'cell-event', href: `#/event/${ev.id}` }, cover(ev, 'mini-cover'),
+                    el('div', {}, el('b', {}, ev.title), el('span', {}, `${fmtShort(ev.date)} · ${ev.venue}`)))),
+                  el('td', {}, `${s} / ${ev.capacity}`, el('div', { class: 'sold-bar' }, el('div', { style: `width:${ev.capacity ? s / ev.capacity * 100 : 0}%` }))),
+                  el('td', {}, money(s * ev.price)),
+                  el('td', {}, btn));
+              })))
+          : el('p', { class: 'muted' }, 'You haven’t created any events yet. Use the form to publish your first one.'))))];
 }
 
-loadMe();
+// ---------- router ----------
+
+function renderInto(nodes) {
+  $('app').replaceChildren(...[nodes].flat().filter(Boolean));
+  window.scrollTo(0, 0);
+}
+
+let routeSeq = 0;
+async function route() {
+  const seq = ++routeSeq;
+  ui.bellOpen = false;
+  const [path, query] = location.hash.slice(1).split('?');
+  const next = new URLSearchParams(query || '').get('next');
+  const parts = (path || '/').split('/').filter(Boolean);
+  renderNav();
+  try {
+    let nodes;
+    if (parts[0] === 'event' && parts[1]) nodes = await pageEvent(parts[1]);
+    else if (parts[0] === 'tickets') nodes = await pageTickets();
+    else if (parts[0] === 'dashboard') nodes = await pageDashboard();
+    else if (parts[0] === 'login') nodes = user ? go('/') : pageAuth('login', next);
+    else if (parts[0] === 'signup') nodes = user ? go('/') : pageAuth('signup', next);
+    else nodes = await pageHome();
+    if (seq === routeSeq && nodes) renderInto(nodes);
+  } catch (err) {
+    if (seq === routeSeq) {
+      renderInto([el('div', { class: 'container' }, el('div', { class: 'empty', style: 'margin-top:48px' },
+        el('span', { class: 'big' }, '⚠️'), errorText(err)))]);
+    }
+  }
+}
+
+window.addEventListener('hashchange', route);
+(async () => {
+  await loadMe();
+  await loadNotifications();
+  route();
+})();
 </script>
 </body>
 </html>
