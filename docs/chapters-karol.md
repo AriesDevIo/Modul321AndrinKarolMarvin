@@ -2,8 +2,6 @@
 
 > Procedure / project planning · Component chapter Booking Service · PostgreSQL setup · Web frontend · Conclusion
 > Karol merges all chapters into the final documentation.
->
-> Placeholders marked **⟨TODO⟩** still need to be filled in (submission date, personal reflection).
 
 ---
 
@@ -30,7 +28,7 @@ The project followed the procedure suggested in the LB2 assignment. Planned and 
 | 3. Implementation | L6–13 | Each member builds their service against the interface contract | **M3:** interim review with the teacher | 19.10.2026 – status meeting with the teacher, all services merged into `main` the same day |
 | 4. Integration & HA | L14–16 | Full stack, booking flow end to end, HA tests | **M4:** system running on the VM | 19.10.2026 all services merged into `main` · 26.10.2026 running on the LernMAAS VM |
 | 5. Testing & fixes | L17–18 | Test protocol, bug fixes | – | 25.10.2026 frontend fixes, gateway healthcheck fix |
-| 6. Documentation & submission | L19–20 | Component chapters, final merge, tag `v1.0` | **M5:** submission | ⟨TODO: submission date⟩ |
+| 6. Documentation & submission | L19–20 | Component chapters, final merge, tag `v1.0` | **M5:** submission | 27.10.2026 |
 
 ### 1.3 Working method
 
@@ -295,4 +293,10 @@ Optional features implemented: cancelling bookings (F8), protection against dele
 
 ### 5.5 Personal reflection
 
-⟨TODO: Karol – a few sentences in your own words: what you learned (e.g. sagas, distributed consistency, Docker), what you would do differently next time, how the teamwork went.⟩
+**What I learned.** Before this project I mostly knew applications with one database, where a transaction solves consistency. With the Booking Service I learned that this doesn't work across several services, and that a saga with compensation steps is a practical replacement. I also learned how much easier the critical parts get when the database does the work, as with the atomic reservation, instead of trying to coordinate replicas in code. On the infrastructure side I got more confident with Docker Compose, healthchecks and running the whole system on a remote VM.
+
+**What went well.** Defining the interfaces at the beginning paid off: I could build and test my service against a mock gateway long before the other services existed, and the integration went smoothly.
+
+**What I would do differently.** We integrated the services quite late in the project. Next time I would connect the components earlier, even with only basic functionality, so problems show up sooner. I would also write the documentation continuously during development instead of mostly at the end, and add automated tests to the repository from the start.
+
+**Teamwork.** The clear split into one component per person worked well, because everyone could work independently. Coordination mostly happened through the README and pull requests. Towards the end we had to coordinate more closely to bring the system and the documentation together in time.
