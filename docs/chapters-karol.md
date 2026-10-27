@@ -3,7 +3,7 @@
 > Procedure / project planning · Component chapter Booking Service · PostgreSQL setup · Web frontend · Conclusion
 > Karol merges all chapters into the final documentation.
 >
-> Placeholders marked **⟨TODO⟩** need facts only the team knows (dates of meetings, personal reflection).
+> Placeholders marked **⟨TODO⟩** still need to be filled in (submission date, personal reflection).
 
 ---
 
@@ -25,9 +25,9 @@ The project followed the procedure suggested in the LB2 assignment. Planned and 
 
 | Phase | Lessons | Content | Milestone | Reached |
 |---|---|---|---|---|
-| 1. Kick-off & planning | L1–3 | Requirements, interfaces, owners, README as planning document | **M1:** plan approved by the teacher | ⟨TODO: date of approval⟩ (README created 21.09.2026) |
+| 1. Kick-off & planning | L1–3 | Requirements, interfaces, owners, README as planning document | **M1:** plan approved by the teacher | 21.09.2026 – plan (README) approved by the teacher |
 | 2. Setup & proof of concept | L4–5 | Repository, Compose, gateway, atomic reserve prototype | **M2:** HA + consistency concept works | 28.09.2026 – Booking Service skeleton with saga and `db/init.sql`, tested against a mock gateway incl. 50 parallel bookings |
-| 3. Implementation | L6–13 | Each member builds their service against the interface contract | **M3:** interim review with the teacher | ⟨TODO: date of status meeting⟩ |
+| 3. Implementation | L6–13 | Each member builds their service against the interface contract | **M3:** interim review with the teacher | 19.10.2026 – status meeting with the teacher, all services merged into `main` the same day |
 | 4. Integration & HA | L14–16 | Full stack, booking flow end to end, HA tests | **M4:** system running on the VM | 19.10.2026 all services merged into `main` · 26.10.2026 running on the LernMAAS VM |
 | 5. Testing & fixes | L17–18 | Test protocol, bug fixes | – | 25.10.2026 frontend fixes, gateway healthcheck fix |
 | 6. Documentation & submission | L19–20 | Component chapters, final merge, tag `v1.0` | **M5:** submission | ⟨TODO: submission date⟩ |
