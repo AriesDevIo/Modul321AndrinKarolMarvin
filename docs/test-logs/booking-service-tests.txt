@@ -1,0 +1,142 @@
+# npm run test:coverage – 02.11.2026 08:31, Node v25.9.0, PostgreSQL 16 (Docker)
+▶ health and routing
+  ✔ BS-01 GET /health returns 200 when the database is reachable (63.120375ms)
+  ✔ BS-02 unknown routes return 404 JSON (9.685125ms)
+✔ health and routing (179.969125ms)
+▶ authentication and authorization
+  ✔ BS-03 request without token is rejected with 401 (23.1045ms)
+  ✔ BS-04 token signed with a wrong secret is rejected with 401 (11.355208ms)
+  ✔ BS-05 organizer cannot book (403) (10.358542ms)
+✔ authentication and authorization (45.0525ms)
+▶ input validation
+  ✔ BS-06a missing body → 400 and nothing is stored (13.697792ms)
+  ✔ BS-06b quantity 0 → 400 and nothing is stored (8.604459ms)
+  ✔ BS-06c quantity 11 → 400 and nothing is stored (10.322875ms)
+  ✔ BS-06d quantity not an integer → 400 and nothing is stored (8.453417ms)
+  ✔ BS-06e eventId as string → 400 and nothing is stored (9.469958ms)
+  ✔ BS-06f negative eventId → 400 and nothing is stored (8.827334ms)
+  ✔ BS-06g empty paymentToken → 400 and nothing is stored (9.0125ms)
+  ✔ BS-07 malformed JSON → 400 (7.825792ms)
+  ✔ BS-08 quantity 1 and 10 (boundaries) are accepted (31.797917ms)
+✔ input validation (108.5245ms)
+▶ booking saga
+  ✔ BS-09 successful booking → 201 CONFIRMED, price from the event service (16.187583ms)
+  ✔ BS-10 internal calls carry the service token and the right payloads (16.195833ms)
+  ✔ BS-11 a confirmation notification is sent to the customer (16.048041ms)
+  ✔ BS-12 price is rounded to 2 decimals (11.327958ms)
+  ✔ BS-13 declined payment → 402, booking FAILED, tickets released (14.708208ms)
+  ✔ BS-14 not enough tickets → 409, FAILED, no payment attempted (17.928625ms)
+  ✔ BS-15 unknown event → 404, FAILED (10.150833ms)
+  ✔ BS-16 event service unreachable → 503, no release needed (13.34475ms)
+  ✔ BS-17 event service returns 500 → 503 (12.647875ms)
+  ✔ BS-18 payment service returns 500 → 503, tickets released (T11) (15.144ms)
+  ✔ BS-19 payment service unreachable → 503, tickets released (13.663583ms)
+  ✔ BS-20 payment service hangs → timeout → 503, tickets released (315.634708ms)
+  ✔ BS-21 notification service down → booking still CONFIRMED (T12) (22.738958ms)
+Booking 1: could not release 2 tickets for event 1: release returned 500
+  ✔ BS-22 release fails after declined payment → still 402 FAILED, error logged (19.525166ms)
+  ✔ BS-23 50 parallel bookings for 10 tickets → exactly 10 confirmed (no overselling) (147.501ms)
+✔ booking saga (663.533167ms)
+▶ reading bookings
+  ✔ BS-24 GET /bookings returns only own bookings, newest first (27.222917ms)
+  ✔ BS-25 GET /bookings/:id returns own booking (13.648875ms)
+  ✔ BS-26 other user's booking and invalid ids → 404 (16.633458ms)
+✔ reading bookings (57.722833ms)
+▶ cancelling (F8)
+  ✔ BS-27 cancel a confirmed booking → CANCELLED, tickets released (19.21475ms)
+  ✔ BS-28 cancelling twice → 409, tickets released only once (19.711125ms)
+  ✔ BS-29 parallel double cancel releases only once (16.878166ms)
+  ✔ BS-30 cannot cancel other user's, failed or unknown bookings (25.36125ms)
+  ✔ BS-31 release fails during cancel → 503, booking stays CONFIRMED (16.720708ms)
+✔ cancelling (F8) (98.197125ms)
+▶ database failures
+  ✔ BS-34 database down → /health returns 503 (9.212584ms)
+Error: simulated database outage
+    at t.db.pool.query (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/test/bookings.test.js:285:24)
+    at setStatus (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/src/bookings.js:22:31)
+    at /Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/src/bookings.js:98:21
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+  ✔ BS-35 database fails mid-saga (after reserve) → 500, tickets released (10.891417ms)
+Error: simulated database outage
+    at t.db.pool.query (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/test/bookings.test.js:285:24)
+    at /Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/src/bookings.js:129:33
+    at Layer.handle [as handle_request] (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/index.js:284:15
+    at router.process_params (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/index.js:280:10)
+    at requireJwt (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/src/auth.js:14:5)
+Error: simulated database outage
+    at t.db.pool.query (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/test/bookings.test.js:285:24)
+    at /Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/src/bookings.js:144:33
+    at Layer.handle [as handle_request] (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/index.js:284:15
+    at param (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/index.js:365:14)
+    at param (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/index.js:376:14)
+    at router.process_params (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/index.js:421:3)
+Error: simulated database outage
+    at t.db.pool.query (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/test/bookings.test.js:285:24)
+    at /Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/src/bookings.js:161:33
+    at Layer.handle [as handle_request] (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/index.js:284:15
+    at param (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/index.js:365:14)
+    at param (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/index.js:376:14)
+    at router.process_params (/Users/karolkrawiec/Documents/GitHub/Modul321AndrinKarolMarvin/booking-service/node_modules/express/lib/router/index.js:421:3)
+  ✔ BS-36 database down → read and cancel endpoints return 500 instead of crashing (18.694833ms)
+Database not ready (starting up), retry 1/5
+Database not ready (starting up), retry 2/5
+  ✔ BS-37 startup waits for the database (retries until it is reachable) (27.006166ms)
+Database not ready (simulated database outage), retry 1/3
+Database not ready (simulated database outage), retry 2/3
+  ✔ BS-38 startup gives up after the configured number of retries (28.890417ms)
+✔ database failures (94.993709ms)
+▶ database
+  ✔ BS-32 migration can run in parallel (two replicas starting at once) (11.289083ms)
+  ✔ BS-33 database constraint rejects invalid quantity even if validation is bypassed (8.825667ms)
+✔ database (20.291667ms)
+▶ config
+  ✔ BS-U1 refuses to start without JWT_SECRET (102.23825ms)
+  ✔ BS-U1 refuses to start without SERVICE_TOKEN (99.544333ms)
+  ✔ BS-U1 refuses to start without DB_PASSWORD (100.128792ms)
+  ✔ BS-U2 uses sensible defaults (100.071833ms)
+✔ config (403.353125ms)
+▶ auth middleware
+  ✔ BS-U3 valid token sets req.user and calls next() (5.293333ms)
+  ✔ BS-U4 missing header → 401 (0.1395ms)
+  ✔ BS-U4 wrong scheme → 401 (0.080958ms)
+  ✔ BS-U4 empty token → 401 (0.065916ms)
+  ✔ BS-U4 garbage token → 401 (0.124542ms)
+  ✔ BS-U5 expired token → 401 (1.19475ms)
+  ✔ BS-U6 requireRole lets the right role through and blocks others with 403 (0.144167ms)
+✔ auth middleware (7.276458ms)
+ℹ tests 55
+ℹ suites 10
+ℹ pass 55
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2095.5025
+ℹ start of coverage report
+ℹ -------------------------------------------------------------
+ℹ file         | line % | branch % | funcs % | uncovered lines
+ℹ -------------------------------------------------------------
+ℹ src          |        |          |         | 
+ℹ  app.js      | 100.00 |   100.00 |  100.00 | 
+ℹ  auth.js     | 100.00 |   100.00 |  100.00 | 
+ℹ  bookings.js | 100.00 |    97.10 |   92.31 | 
+ℹ  clients.js  | 100.00 |   100.00 |   83.33 | 
+ℹ  config.js   | 100.00 |   100.00 |  100.00 | 
+ℹ  db.js       | 100.00 |   100.00 |   75.00 | 
+ℹ -------------------------------------------------------------
+ℹ all files    | 100.00 |    98.21 |   90.00 | 
+ℹ -------------------------------------------------------------
+ℹ end of coverage report

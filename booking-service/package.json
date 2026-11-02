@@ -7,7 +7,10 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "mock-gateway": "node dev/mock-gateway.js"
+    "mock-gateway": "node dev/mock-gateway.js",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
+    "test:coverage": "node --test --test-concurrency=1 --experimental-test-coverage --test-coverage-include='src/**' test/*.test.js",
+    "test:db": "./test/test-db.sh start"
   },
   "engines": {
     "node": ">=20"

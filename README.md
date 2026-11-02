@@ -268,7 +268,8 @@ Status values: `PENDING` · `CONFIRMED` · `FAILED` · `CANCELLED`
 
 ```bash
 docker stop booking-service-1     # system keeps working through replica 2
-docker kill event-service-2       # container restarts automatically
+sudo kill -9 $(docker inspect -f '{{.State.Pid}}' event-service-2)   # simulated crash: container restarts automatically
+# note: `docker kill` / `docker stop` count as a manual stop, Docker does not restart those
 ```
 
 ---
@@ -286,7 +287,7 @@ docker kill event-service-2       # container restarts automatically
 | T7 | Cancel a booking | `CANCELLED`, tickets released |
 | T8 | **Oversell test:** capacity 10, 50 parallel single-ticket bookings | Exactly 10 × `201`, `available = 0` |
 | T9 | Stop one replica of each service, then book | Booking succeeds |
-| T10 | `docker kill` a container | Container restarts automatically |
+| T10 | Container process crashes (`kill -9` on its PID) | Container restarts automatically |
 | T11 | Stop both payment replicas, then book | `503`, tickets released |
 | T12 | Notification path unavailable, then book | Booking still `CONFIRMED` |
 | T13 | `docker compose down && up` | Data persists |
